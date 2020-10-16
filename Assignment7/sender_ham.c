@@ -10,7 +10,6 @@
 #include <arpa/inet.h>  
 #include <sys/time.h> 
 // Function to compute the number of redundant bits
-
 int RedundantBits(char* bitstream){
 	int m;
 	int r;
@@ -67,7 +66,6 @@ int CalculateRed(int temp[20], int no, char data[40])
 }
 int main(int argc,char **argv)
 {
-
 	int len;
 	int sockfd, n;
 	struct sockaddr_in servaddr,cliaddr;	
@@ -143,53 +141,51 @@ int main(int argc,char **argv)
 		int RedBit = CalculateRed(temp, no, data);
 		data[index] = RedBit;
 	}
+
 	// Original
 	printf("Data with Redundant bits : ");
 	for(int i = 1; i < m + 1; i++)
 		printf("%d ", data[i]);
 	printf("\n");
-	// Change a bit
-	pos = rand() % m;
+
+	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+	if(sockfd < 0)
+		perror("cannot create socket");
+	bzero(&servaddr, sizeof(servaddr));
+	cliaddr.sin_family=AF_INET;
+	cliaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+	cliaddr.sin_port=htons(8083);
+
+	pos = rand() % (m - 1);
+	
+	// Generate a random number to replace the bit at index pos 
 	printf("Random error bit generated at position : %d\n", pos);
 	if(data[pos] == 1)
 		data[pos] = 0;
 	else
 		data[pos] = 1;
-	//Data is transmitted
-	printf("Data Transmitted is : ");
+
+	printf("Data Transmitted (%d bits) : ", m);
 	for(int i = 1; i < m + 1; i++)
 		printf("%d ", data[i]);
 	printf("\n");
 
-	sockfd=socket(AF_INET,SOCK_STREAM,0); 
-	if(sockfd<0)
-		perror("cannot create socket");
-	
-	bzero(&servaddr,sizeof(servaddr));
-	
-	cliaddr.sin_family=AF_INET;
-	cliaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
-	cliaddr.sin_port=htons(8083);
-
-	int k = 0;
-	char data_transmit[100];
-	long num = 0;
-    for(int i = m; i >= 0; i--)
+	char dest[m];
+	char FINAL[m];
+	for(int i = 1; i <= m; i++)
     {
-        num += pow(10, k) * data[i];
-        k++;
+    	if (data[i] == 1){
+    		FINAL[i-1] = '1';
+    	}
+    	else
+    		FINAL[i-1] = '0';
     }
-    sprintf(data_transmit, "%lu", num);
-	connect(sockfd,(struct sockaddr*)&cliaddr,sizeof(cliaddr));
-	char ult[strlen(data_transmit) + 1];
-	if (strlen(data_transmit) != strlen(data))
-	{
-		for(int i = 1; i < strlen(data_transmit) + 1; i++)
-			ult[i] = data_transmit[i-1];
-		ult[0] = '0';	
-	}
+    strcpy(dest, FINAL);
+    dest[m] = '\0';
+
+    connect(sockfd,(struct sockaddr*)&cliaddr,sizeof(cliaddr));
 	//Sending Message
-	n = write(sockfd,ult,sizeof(ult));
+	n = write(sockfd,dest,sizeof(dest));
 	close(sockfd);
 	return 0;
 }

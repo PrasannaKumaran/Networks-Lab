@@ -34,19 +34,6 @@ int binary_representation(int num)
     }
     return bin;
 }
-int ParityBit(char* bitstream){
-	int p;
-	int m;
-	int count = 0;
-	m = strlen(bitstream);
-	for(int b = 0; b < m; b++){
-		if(bitstream[b] == '1')
-			count++;
-	}
-	if((count % 2) == 0)
-		return 0;
-	return 1;
-}
 
 int CalculateRed(int temp[20], int no, char data[40])
 {
@@ -62,7 +49,6 @@ int CalculateRed(int temp[20], int no, char data[40])
 		return 1;
 }
 int CalculateIndex(int redBits[20], int no){
-	int p = no - 1;
 	int val = 0;
 	int v;
 	for(int i = 0; i < no; i++){
@@ -70,8 +56,7 @@ int CalculateIndex(int redBits[20], int no){
 			v = 0;
 		else
 			v = 1;
-		val = val + (pow(2, p) * v);
-		p--;
+		val = val + (pow(2, i) * v);
 	}
 	return val;
 }
@@ -83,34 +68,30 @@ int main(int argc,char **argv)
 	struct sockaddr_in servaddr,cliaddr;
 	char buff[1024];
 	char bitstream[1000];
-	
-	sockfd=socket(AF_INET,SOCK_STREAM,0); 
-	if(sockfd<0)
+	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+	if(sockfd < 0)
 		perror("cannot create socket");
-	
-	bzero(&servaddr,sizeof(servaddr));
-	
+
+	bzero(&servaddr, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr=  INADDR_ANY;
 	servaddr.sin_port=htons(8083);
-	
 	if(bind(sockfd,(struct sockaddr*)&servaddr,sizeof(servaddr))<0)
-	perror("Bind error");
-	
+		perror("Bind error");
 	listen(sockfd,2);
-	
 	len=sizeof(cliaddr);
-	
-	newfd = accept(sockfd,(struct sockaddr*)&cliaddr,&len);
+	newfd = accept(sockfd, (struct sockaddr*)&cliaddr, &len);
 	char a[25];
-
 	//Receiving the message
-	
 	n = read(newfd, a, sizeof(a));
-	printf("Received Data : %s", a);
+	printf("Received Data (%ld bits) : ", strlen(a));
+	for(int i = 0; i < strlen(a) + 1; i++)
+		printf("%c ", a[i]);
+	char temp;
+	int total = strlen(a);
 	int m = strlen(a);
 	int t_scount = 0;
-
+	// Calculate the Redandant bits
 	char RB[t_scount];
 	for(int i = 0; pow(2, i) <= strlen(a); i++){
 		int ind = pow(2, i) - 1;
@@ -149,7 +130,6 @@ int main(int argc,char **argv)
 			all_crs[count] = cr;
 	}
 	int redBits[t_scount];
-
 	// Calculate Redundant bit and update the message 
 	for(int i = 0; i < t_scount; i++){
 		int no = all_crs[i];
@@ -161,21 +141,17 @@ int main(int argc,char **argv)
 		int RedBit = CalculateRed(temp, no, a);
 		redBits[i] = RedBit;
 	}
-	
 	// Calculate index of error bit
 	int index = CalculateIndex(redBits, t_scount);
-	printf("\nError bit index in  binary_representation : %d\n", binary_representation(index));
+	printf("\nError bit index in binary_representation : %d\n", binary_representation(index));
 	printf("Error bit at index position : %d\n", index);
 	index = index - 1;
-
 	if (a[index] == '1')
 		a[index] = '0';
 	else
 		a[index] = '1';
-
 	int c = 0;
 	int final_message[strlen(a)];
-	
 	for(int i = 0; i < strlen(a); i++){
 		if (a[i] == 48){
 			final_message[c] = 0;
@@ -189,21 +165,19 @@ int main(int argc,char **argv)
 			final_message[c] = a[i];
 			c++;
 		}
-
 	}
 	int redS[t_scount];
 	int cou = 0;
-
 	for(int i = 0; i < t_scount;i++, cou++){
 		int index = pow(2, i) - 1;
 		redS[cou] = final_message[index];
 		final_message[index] = -2;
 	}
 	printf("Redundant Bits : ");
-	for (int i = 0; i < t_scount; i++)
+	for (int i = t_scount - 1; i >= 0; i--)
 		printf("%d ",redBits[i]);
 	printf("\nData after error correction : ");
-	for(int i = 0; i < strlen(a); i++){
+	for(int i = strlen(a) - 1; i >= 0; i--){
 		if(final_message[i] != -2)
 			printf("%d ", final_message[i]);
 	}
