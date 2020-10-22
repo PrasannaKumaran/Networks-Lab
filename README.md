@@ -8,3 +8,4 @@ Assignment solutions for Networks Lab - Semester V
 5) Domain name server using UDP
 6) Address Resolution Protocol
 7) Hamming code detection and correction
+8) Performance evaluation of TCP and UDP
