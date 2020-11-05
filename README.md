@@ -9,3 +9,5 @@ Assignment solutions for Networks Lab - Semester V
 6) Address Resolution Protocol
 7) Hamming code detection and correction
 8) Performance evaluation of TCP and UDP
+9) Simulation of routing protocol
+10) Performance evaluation of routing protocols
